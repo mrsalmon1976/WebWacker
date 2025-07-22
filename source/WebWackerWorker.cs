@@ -1,39 +1,66 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NLog;
-using NLog.Layouts;
-using NLog.Targets;
-using System;
-using System.Drawing;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using WebWacker.Logging;
+using WebWacker.Models;
+using WebWacker.Services;
 
 public class WebWackerWorker : BackgroundService
 {
     private readonly ILogger<WebWackerWorker> _logger;
+    private readonly IProjectFileService _projectFileService;
+    private readonly IProjectExecutionService _projectExecutionService;
+    private readonly IProjectSummaryService _projectSummaryService;
 
-    public WebWackerWorker(ILogger<WebWackerWorker> logger)
+    public WebWackerWorker(ILogger<WebWackerWorker> logger
+        , IProjectFileService projectFileService
+        , IProjectExecutionService projectExecutionService
+        , IProjectSummaryService projectSummaryService
+        )
     {
         _logger = logger;
+        _projectFileService = projectFileService;
+        _projectExecutionService = projectExecutionService;
+        _projectSummaryService = projectSummaryService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        IEnumerable<Project> projects = _projectFileService.LoadAllProjects();
+        _logger.LogInformation($"Loaded {projects.Count()} projects.");
+
+        var backgroundTasks = new List<Task>();
+        ConcurrentBag<WebExecutionResult> webExecutionResults = new ConcurrentBag<WebExecutionResult>();
+
+        foreach (var project in projects)
         {
-            Console.WriteLine("Hello, World!");
-            //_logger.LogInformation("WebWackerWorker is running at: {time}", DateTimeOffset.Now);
-
-            //_logger.LogInformation("Colored message {Color}", ConsoleColor.Cyan);
-
-            using (NLog.ScopeContext.PushProperty("Color", "Blue"))
+            if (stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Processing {Item}", "MyItem");
+                _logger.LogWarning("Cancellation requested, stopping project processing.");
+                break;
             }
 
-            await Task.Delay(1000, stoppingToken); // Print every second
+            var task = Task.Run(async () =>
+            {
+                _logger.LogInformation($"Processing project: {project.Name}");
+                var results = await _projectExecutionService.ExecuteProject(project, stoppingToken);
+                foreach (var wer in results)
+                {
+                    webExecutionResults.Add(wer);
+                }
+            }, stoppingToken);
+
+            backgroundTasks.Add(task);
         }
+
+        if (!stoppingToken.IsCancellationRequested)
+        {
+            await Task.WhenAll(backgroundTasks);
+            _projectSummaryService.GenerateSummary(webExecutionResults);
+        }
+        _logger.LogInformation("All projects have been processed.");
+
+        Console.ReadKey();
     }
 }
 

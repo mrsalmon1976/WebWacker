@@ -3,6 +3,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Extensions.Logging;
+using WebWacker.IO;
+using WebWacker.Services;
 
 var logger = LogManager.Setup().LoadConfigurationFromFile("NLog.config").GetCurrentClassLogger();
 
@@ -13,7 +15,17 @@ try
     var host = Host.CreateDefaultBuilder(args)
         .ConfigureServices((context, services) =>
         {
+            services.AddHttpClient();
+
+            services.AddTransient<IFileSystemWrapper, FileSystemWrapper>();
+
+            services.AddTransient<IWebExecutionService, WebExecutionService>();
+            services.AddTransient<IProjectFileService, ProjectFileService>();
+            services.AddTransient<IProjectExecutionService, ProjectExecutionService>();
+            services.AddTransient<IProjectSummaryService, ProjectSummaryService>();
+
             services.AddHostedService<WebWackerWorker>();
+
         })
         .ConfigureLogging(logging =>
         {

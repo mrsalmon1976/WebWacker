@@ -1,0 +1,20 @@
+{
+  "name": "example",
+  "baseUrl": "https://www.yoursite.co.za",
+  "threadCount": 10,
+  "sequentialEndpoints" : false,
+  "endPoints": [
+    {
+      "path": "/",
+      "method" :  "GET",
+      "hitCount":  100
+    },
+    {
+      "path": "/api/echo",
+      "method": "GET",
+      "hitCount": 100
+    }
+  ]
+}
+
+
