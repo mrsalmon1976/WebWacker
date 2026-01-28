@@ -2,6 +2,7 @@
 {
     public enum LogColor
     {
+        Green,
         Blue,
         Red
     }

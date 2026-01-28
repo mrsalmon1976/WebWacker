@@ -8,7 +8,7 @@ namespace WebWacker.Services
 {
     public interface IProjectSummaryService
     {
-        ProjectSummary GenerateSummary(IEnumerable<WebExecutionResult> results);
+        ProjectSummary GenerateSummary(Project project, IEnumerable<WebExecutionResult> results);
     }
     public class ProjectSummaryService : IProjectSummaryService
     {
@@ -19,9 +19,12 @@ namespace WebWacker.Services
             _logger = logger;
         }
 
-        public ProjectSummary GenerateSummary(IEnumerable<WebExecutionResult> results)
+        public ProjectSummary GenerateSummary(Project project, IEnumerable<WebExecutionResult> results)
         {
-            _logger.LogInformation($"Generating summary...");
+            _logger.LogInformation(LogColor.Green, $"---------------------------------------------------------");
+            _logger.LogInformation(LogColor.Blue, $"Summary Results for Project '{project.Name}'");
+            _logger.LogInformation($"---------------------------------------------------------");
+            _logger.LogInformation($"Thread count: {project.ThreadCount}");
 
             var summary = results
                 .GroupBy(x => new { x.Url, x.StatusCode })
@@ -33,15 +36,15 @@ namespace WebWacker.Services
                     AverageResponseTime = g.Average(x => x.ResponseTime)
                 });
 
-            _logger.LogInformation(LogColor.Blue, $"---------------------------------------------------------");
+            _logger.LogInformation($"---------------------------------------------------------");
 
             foreach (var item in summary)
             {
-                _logger.LogInformation($"URL: {item.Url}");
+                _logger.LogInformation(LogColor.Blue, $"URL: {item.Url}");
                 _logger.LogInformation($"Status Code: {item.StatusCode}");
-                _logger.LogInformation($"Count: {item.Count}");
+                _logger.LogInformation($"Request Count: {item.Count}");
                 _logger.LogInformation($"Average Response Time: {item.AverageResponseTime} ms");
-                _logger.LogInformation(LogColor.Blue, $"---------------------------------------------------------");
+                _logger.LogInformation($"---------------------------------------------------------");
             }
 
             return new ProjectSummary();

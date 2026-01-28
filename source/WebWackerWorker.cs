@@ -29,11 +29,13 @@ public class WebWackerWorker : BackgroundService
         IEnumerable<Project> projects = _projectFileService.LoadAllProjects();
         _logger.LogInformation($"Loaded {projects.Count()} projects.");
 
-        var backgroundTasks = new List<Task>();
-        ConcurrentBag<WebExecutionResult> webExecutionResults = new ConcurrentBag<WebExecutionResult>();
-
         foreach (var project in projects)
         {
+            _logger.LogInformation($"Processing project: {project.Name}");
+
+            ConcurrentBag<WebExecutionResult> webExecutionResults = new ConcurrentBag<WebExecutionResult>();
+            var backgroundTasks = new List<Task>();
+
             if (stoppingToken.IsCancellationRequested)
             {
                 _logger.LogWarning("Cancellation requested, stopping project processing.");
@@ -42,7 +44,6 @@ public class WebWackerWorker : BackgroundService
 
             var task = Task.Run(async () =>
             {
-                _logger.LogInformation($"Processing project: {project.Name}");
                 var results = await _projectExecutionService.ExecuteProject(project, stoppingToken);
                 foreach (var wer in results)
                 {
@@ -51,13 +52,20 @@ public class WebWackerWorker : BackgroundService
             }, stoppingToken);
 
             backgroundTasks.Add(task);
+
+            if (stoppingToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Cancellation requested, stopping project processing.");
+                break;
+            }
+            else
+            {
+                await Task.WhenAll(backgroundTasks);
+                _projectSummaryService.GenerateSummary(project, webExecutionResults);
+
+            }
         }
 
-        if (!stoppingToken.IsCancellationRequested)
-        {
-            await Task.WhenAll(backgroundTasks);
-            _projectSummaryService.GenerateSummary(webExecutionResults);
-        }
         _logger.LogInformation("All projects have been processed.");
 
         Console.ReadKey();
