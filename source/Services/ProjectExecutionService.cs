@@ -73,7 +73,7 @@ namespace WebWacker.Services
                     webExecutions.Add(new WebExecution
                     {
                         Url = url,
-                        Order = (project.SequentialEndpoints ? 0 : r.Next(0, Int32.MaxValue))
+                        Order = (project.SequentialEndpoints ? i : r.Next(0, Int32.MaxValue))
                     });
 
                     if (stoppingToken.IsCancellationRequested)
