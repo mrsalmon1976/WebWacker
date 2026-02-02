@@ -27,7 +27,15 @@ namespace WebWacker.Services
         {
             _logger.LogInformation(LogColor.Blue, $"Executing project '{project.Name}' with {project.ThreadCount} threads.");
 
-            var tasks = CreateExecutionTasks(project, stoppingToken);
+            // if authentication is defined, load this up
+            string? accessToken = null;
+            if (project.AuthenticationEndpoint != null)
+            {
+                accessToken = await _webExecutionService.Authenticate(project);
+            }
+
+            // execute all the requests
+            var tasks = CreateExecutionTasks(project, accessToken, stoppingToken);
 
             using var semaphore = new SemaphoreSlim(project.ThreadCount, project.ThreadCount);
 
@@ -57,7 +65,7 @@ namespace WebWacker.Services
             return _webExecutions.ToList();
         }
 
-        private List<Func<Task>> CreateExecutionTasks(Project project, CancellationToken stoppingToken)
+        private List<Func<Task>> CreateExecutionTasks(Project project, string? accessToken, CancellationToken stoppingToken)
         {
             var tasks = new List<Func<Task>>();
             Random r = new Random();
@@ -72,6 +80,7 @@ namespace WebWacker.Services
                 {
                     webExecutions.Add(new WebExecution
                     {
+                        AccessToken = (endpoint.IsAuthenticated ? accessToken : null),
                         Url = url,
                         Order = (project.SequentialEndpoints ? i : r.Next(0, Int32.MaxValue))
                     });
@@ -95,7 +104,7 @@ namespace WebWacker.Services
             {
                 tasks.Add(async () =>
                 {
-                    var result = await _webExecutionService.Execute(webExecution);
+                    var result = await _webExecutionService.Execute(project, webExecution);
                     _webExecutions.Add(result);
                 });
 

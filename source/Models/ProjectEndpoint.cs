@@ -13,6 +13,9 @@ namespace WebWacker.Models
         [JsonPropertyName("hitCount")]
         public int HitCount { get; set; } = 1;
 
+        [JsonPropertyName("isAuthenticated")]
+        public bool IsAuthenticated { get; set; }
+
         public bool IsValid()
         {
             return true;

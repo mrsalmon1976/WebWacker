@@ -1,18 +1,30 @@
 {
   "name": "example",
-  "baseUrl": "https://www.yoursite.co.za",
-  "threadCount": 10,
-  "sequentialEndpoints" : false,
-  "endPoints": [
+  "baseUrl": "https://test.yoursite.co.za",
+  "threadCount": 25,
+  "sequentialEndpoints": false,
+  "variables": {
+    "username": "yourusername",
+    "password": "yourpassword"
+  },
+  "authenticationEndpoint": {
+    "path": "/token",
+    "method": "POST",
+    "body": "Username={{username}}&password={{password}}&grant_type=password",
+    "responseAccessTokenJsonPath": "$.access_token"
+  },
+  "endpoints": [
     {
-      "path": "/",
-      "method" :  "GET",
-      "hitCount":  100
+      "path": "/v2/example/search?searchTerm=test",
+      "method": "GET",
+      "hitCount": 1000,
+      "isAuthenticated": true
     },
     {
-      "path": "/api/echo",
+      "path": "/v1/example/something",
       "method": "GET",
-      "hitCount": 100
+      "hitCount": 1000,
+      "isAuthenticated": true
     }
   ]
 }

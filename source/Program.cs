@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Http;
+using Microsoft.Extensions.Options;
 using NLog;
 using NLog.Extensions.Logging;
 using WebWacker.IO;
@@ -15,7 +17,11 @@ try
     var host = Host.CreateDefaultBuilder(args)
         .ConfigureServices((context, services) =>
         {
-            services.AddHttpClient();
+            services.AddHttpClient(Options.DefaultName).ConfigurePrimaryHttpMessageHandler(() =>
+                new HttpClientHandler
+                {
+                    AllowAutoRedirect = false
+                });
 
             services.AddTransient<IFileSystemWrapper, FileSystemWrapper>();
 

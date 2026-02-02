@@ -16,8 +16,14 @@ namespace WebWacker.Models
         [JsonPropertyName("sequentialEndpoints")]
         public bool SequentialEndpoints { get; set; } = true;
 
-        [JsonPropertyName("endPoints")]
+        [JsonPropertyName("authenticationEndpoint")]
+        public AuthenticationEndpoint? AuthenticationEndpoint { get; set; }
+
+        [JsonPropertyName("endpoints")]
         public IEnumerable<ProjectEndpoint> Endpoints { get; set; } = Enumerable.Empty<ProjectEndpoint>();
+
+        [JsonPropertyName("variables")]
+        public Dictionary<string, string> Variables { get; set; } = new Dictionary<string, string>();
 
         public bool IsValid()
         {

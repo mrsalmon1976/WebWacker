@@ -8,6 +8,8 @@ namespace WebWacker.Models
 {
     public class WebExecution
     {
+        public string? AccessToken { get; set; }
+
         public string Url { get; set; } = string.Empty;
 
         public int Order { get; set; } = 0;
